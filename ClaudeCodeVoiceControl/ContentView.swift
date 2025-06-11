@@ -9,42 +9,28 @@ import SwiftUI
 import AVFoundation
 
 struct ContentView: View {
-    @State private var permissionStatus = "Checking..."
+    @State private var audioManager = AudioManager()
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Microphone Permission")
-                .font(.title)
+            if audioManager.permissionStatus != "Granted ✅" {
+                Text("Status: \(audioManager.permissionStatus)")
+                    .font(.headline)
+            }
             
-            Text("Status: \(permissionStatus)")
-                .font(.headline)
+            if audioManager.isRecording {
+                Text(String(format: "%.6f", audioManager.averageLevel))
+                    .font(.system(size: 48, weight: .bold, design: .monospaced))
+                    .foregroundColor(audioManager.averageLevel == 0 ? .red : .green)
+                    .padding()
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(8)
+            }
         }
         .padding()
-        .frame(minWidth: 400, minHeight: 200)
+        .frame(minWidth: 400, minHeight: 300)
         .onAppear {
-            checkAndRequestPermission()
-        }
-    }
-    
-    func checkAndRequestPermission() {
-        let status = AVCaptureDevice.authorizationStatus(for: .audio)
-        
-        switch status {
-        case .authorized:
-            permissionStatus = "Already Granted ✅"
-        case .denied:
-            permissionStatus = "Denied ❌"
-        case .restricted:
-            permissionStatus = "Restricted ⚠️"
-        case .notDetermined:
-            permissionStatus = "Requesting..."
-            AVCaptureDevice.requestAccess(for: .audio) { granted in
-                DispatchQueue.main.async {
-                    permissionStatus = granted ? "Granted ✅" : "Denied ❌"
-                }
-            }
-        @unknown default:
-            permissionStatus = "Unknown"
+            audioManager.checkAndRequestPermission()
         }
     }
 }

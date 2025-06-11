@@ -1,0 +1,48 @@
+{
+  "source": "/Users/felixlunzenfichter/Documents/ClaudeCodeVoiceControl/ClaudeCodeVoiceControl/ContentView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Audio Monitor",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 17
+        }
+      },
+      {
+        "comment": "",
+        "key": "Status: %@",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 20
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recording at 16kHz",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 24
+        }
+      },
+      {
+        "comment": "",
+        "key": "1-Second Average (16,000 samples):",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 27
+        }
+      },
+      {
+        "comment": "",
+        "key": "Raw Audio Samples (first 400):",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 39
+        }
+      }
+    ]
+  },
+  "version": 1
+}
