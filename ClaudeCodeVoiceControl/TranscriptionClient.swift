@@ -12,6 +12,15 @@ class TranscriptionClient: NSObject {
     var connectionStatus = "Disconnected"
     private var isIntentionalDisconnect = false
     
+    // Server status tracking
+    var serverStatuses: [String: Bool] = [
+        "Backend": false,
+        "Mac Receiver": false
+    ]
+    
+    // Callback for status updates
+    var onStatusUpdate: (() -> Void)?
+    
     // Transcription results
     var transcriptionText = ""      // All finalized text
     var currentUtterance = ""       // Current utterance being spoken
@@ -19,6 +28,9 @@ class TranscriptionClient: NSObject {
     
     // Backend URL from configuration
     private let backendURL = Configuration.backendURL
+    
+    // Status check timer
+    private var statusCheckTimer: Timer?
     
     func connect() {
         Logger.shared.log("Connecting to: \(backendURL)")
@@ -54,6 +66,11 @@ class TranscriptionClient: NSObject {
                         self?.connectionStatus = "Connected"
                         Logger.shared.log("Successfully connected to backend")
                         Logger.shared.log("Sent start message to begin speech recognition")
+                        
+                        // Start periodic status checks
+                        DispatchQueue.main.async {
+                            self?.startStatusChecks()
+                        }
                     }
                 }
             }
@@ -67,10 +84,57 @@ class TranscriptionClient: NSObject {
             webSocket?.send(.data(data)) { _ in }
         }
         
+        // Stop status checks
+        statusCheckTimer?.invalidate()
+        statusCheckTimer = nil
+        
         isIntentionalDisconnect = true
         webSocket?.cancel(with: .goingAway, reason: nil)
         isConnected = false
         connectionStatus = "Disconnected"
+    }
+    
+    private func startStatusChecks() {
+        // Prevent multiple timers
+        if statusCheckTimer != nil {
+            Logger.shared.log("Status check timer already running, skipping")
+            return
+        }
+        
+        // Do an immediate check
+        requestServerStatus()
+        
+        // Check status every 5 seconds
+        statusCheckTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            Logger.shared.log("Status check timer fired at \(Date())")
+            self?.requestServerStatus()
+        }
+        
+        // Ensure timer is added to run loop
+        if let timer = statusCheckTimer {
+            RunLoop.main.add(timer, forMode: .common)
+        }
+        
+        Logger.shared.log("Status check timer started")
+    }
+    
+    private func requestServerStatus() {
+        guard isConnected else { 
+            Logger.shared.log("Cannot request status - not connected")
+            return 
+        }
+        
+        Logger.shared.log("Requesting server status...")
+        let statusRequest = ["type": "requestStatus"]
+        if let data = try? JSONSerialization.data(withJSONObject: statusRequest) {
+            webSocket?.send(.data(data)) { error in
+                if let error = error {
+                    Logger.shared.log("Error requesting status: \(error)")
+                } else {
+                    Logger.shared.log("Status request sent successfully")
+                }
+            }
+        }
     }
     
     func sendAudioData(_ audioData: Data) {
@@ -133,6 +197,9 @@ class TranscriptionClient: NSObject {
             switch type {
             case "connection":
                 self.connectionStatus = json["message"] as? String ?? "Connected"
+                if let statuses = json["serverStatuses"] as? [String: Bool] {
+                    self.serverStatuses = statuses
+                }
                 
             case "transcript":
                 if let transcript = json["transcript"] as? String,
@@ -161,6 +228,14 @@ class TranscriptionClient: NSObject {
             case "error":
                 if let error = json["error"] as? String {
                     self.connectionStatus = "Error: \(error)"
+                }
+                
+            case "serverStatusUpdate":
+                if let statuses = json["serverStatuses"] as? [String: Bool] {
+                    self.serverStatuses = statuses
+                    Logger.shared.log("Server statuses updated: \(statuses)")
+                    // Notify UI to reset ping animation
+                    self.onStatusUpdate?()
                 }
                 
             default:

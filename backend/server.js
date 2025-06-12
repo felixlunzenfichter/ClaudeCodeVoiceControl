@@ -25,18 +25,35 @@ const wss = new WebSocketServer({ server });
 // Google Speech client
 const speechClient = new speech.SpeechClient();
 
+// Track connected clients by type and name
+const clients = {
+  transcribers: new Set(),  // iOS devices sending audio
+  receivers: new Map()      // Mac clients receiving transcriptions (name -> ws)
+};
+
+// Get current server statuses
+function getServerStatuses() {
+  return {
+    "Backend": true,  // Backend is always true if we're responding
+    "Mac Receiver": clients.receivers.has("Mac Receiver")
+  };
+}
+
+
 // Handle WebSocket connections
 wss.on('connection', (ws) => {
   console.log('Client connected');
   
+  let clientType = 'transcriber'; // Default to transcriber for backward compatibility
   let recognizeStream = null;
   let previousTranscript = '';  // Track previous transcript for delta calculation
   
-  // Send initial connection confirmation
+  // Send initial connection confirmation with server statuses
   ws.send(JSON.stringify({ 
     type: 'connection', 
     status: 'connected',
-    message: 'Ready to transcribe'
+    message: 'Ready to transcribe',
+    serverStatuses: getServerStatuses()
   }));
   
   ws.on('message', (data) => {
@@ -62,7 +79,30 @@ wss.on('connection', (ws) => {
         // This is a JSON control message
         const message = JSON.parse(data.toString());
         
-        if (message.type === 'start') {
+        if (message.type === 'identify') {
+          // Client is identifying itself
+          clientType = message.clientType || 'transcriber';
+          const clientName = message.clientName || clientType;
+          console.log(`Client identified as: ${clientType} (${clientName})`);
+          
+          // Add to appropriate client set
+          if (clientType === 'receiver') {
+            clients.receivers.set(clientName, ws);
+            console.log(`Receiver '${clientName}' connected. Total receivers: ${clients.receivers.size}`);
+          } else {
+            clients.transcribers.add(ws);
+            console.log(`Transcriber connected. Total transcribers: ${clients.transcribers.size}`);
+          }
+          
+          // Confirm identification
+          ws.send(JSON.stringify({
+            type: 'connection',
+            status: 'identified',
+            clientType: clientType,
+            serverStatuses: getServerStatuses()
+          }));
+          
+        } else if (message.type === 'start') {
           // Start new recognition stream
           console.log('Starting recognition stream');
           
@@ -103,16 +143,30 @@ wss.on('connection', (ws) => {
                   delta = transcript;
                 }
                 
-                // Send delta transcript back to client
-                ws.send(JSON.stringify({
+                // Create transcript message
+                const transcriptMessage = {
                   type: 'transcript',
                   transcript: transcript,      // Full transcript for reference
                   delta: delta,                // Only the new part
                   isFinal: isFinal,
                   timestamp: new Date().toISOString()
-                }));
+                };
+                
+                // Send to original transcriber
+                ws.send(JSON.stringify(transcriptMessage));
+                
+                // Broadcast to all receivers
+                const messageStr = JSON.stringify(transcriptMessage);
+                for (const [name, receiver] of clients.receivers.entries()) {
+                  if (receiver.readyState === receiver.OPEN) {
+                    receiver.send(messageStr);
+                  }
+                }
                 
                 console.log(`${isFinal ? 'Final' : 'Interim'}: ${transcript} (delta: "${delta}")`);
+                if (clients.receivers.size > 0) {
+                  console.log(`Broadcast to ${clients.receivers.size} receiver(s)`);
+                }
                 
                 // Update previous transcript
                 if (isFinal) {
@@ -125,6 +179,13 @@ wss.on('connection', (ws) => {
               }
             });
             
+        } else if (message.type === 'requestStatus') {
+          // Client is requesting current server statuses
+          ws.send(JSON.stringify({
+            type: 'serverStatusUpdate',
+            serverStatuses: getServerStatuses()
+          }));
+          
         } else if (message.type === 'stop') {
           // Stop recognition
           if (recognizeStream) {
@@ -144,7 +205,26 @@ wss.on('connection', (ws) => {
   });
   
   ws.on('close', () => {
-    console.log('Client disconnected');
+    console.log(`${clientType} disconnected`);
+    
+    // Remove from client sets
+    let wasReceiver = false;
+    
+    // Check all receiver entries and remove matching websocket
+    for (const [name, socket] of clients.receivers.entries()) {
+      if (socket === ws) {
+        clients.receivers.delete(name);
+        wasReceiver = true;
+        console.log(`Receiver '${name}' disconnected`);
+        break;
+      }
+    }
+    
+    clients.transcribers.delete(ws);
+    
+    console.log(`Active clients - Transcribers: ${clients.transcribers.size}, Receivers: ${clients.receivers.size}`);
+    
+    
     if (recognizeStream) {
       recognizeStream.end();
     }
