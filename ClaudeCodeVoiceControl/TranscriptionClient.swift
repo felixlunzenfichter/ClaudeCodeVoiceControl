@@ -21,6 +21,9 @@ class TranscriptionClient: NSObject {
     // Callback for status updates
     var onStatusUpdate: (() -> Void)?
     
+    // Audio configuration
+    var sampleRate: Int?     // Set by AudioManager based on device hardware
+    
     // Transcription results
     var transcriptionText = ""      // All finalized text
     var currentUtterance = ""       // Current utterance being spoken
@@ -51,10 +54,18 @@ class TranscriptionClient: NSObject {
         
         // Wait a moment for connection to establish, then send start message
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self else { return }
+            guard let sampleRate = self.sampleRate else {
+                Logger.shared.log("ERROR: Sample rate not set before connecting. AudioManager must set sample rate first.")
+                self.connectionStatus = "Error: Sample rate not set"
+                self.disconnect()
+                return
+            }
             let startMessage = [
                 "type": "start",
-                "languageCode": "en-US"
-            ]
+                "languageCode": "en-US",
+                "sampleRate": sampleRate
+            ] as [String : Any]
             
             if let data = try? JSONSerialization.data(withJSONObject: startMessage) {
                 self?.webSocket?.send(.data(data)) { error in

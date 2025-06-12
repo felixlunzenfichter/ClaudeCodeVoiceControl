@@ -138,12 +138,13 @@ wss.on('connection', (ws) => {
           
         } else if (message.type === 'start') {
           // Start new recognition stream
-          console.log('Starting recognition stream');
+          const sampleRate = message.sampleRate || 44100;
+          console.log(`Starting recognition stream at ${sampleRate}Hz`);
           
           const request = {
             config: {
               encoding: 'LINEAR16',
-              sampleRateHertz: 44100,  // Accept 44.1kHz from iOS
+              sampleRateHertz: sampleRate,  // Use actual sample rate from client
               languageCode: message.languageCode || 'en-US',
               enableAutomaticPunctuation: true,
               model: 'latest_long',
