@@ -10,6 +10,8 @@ import AVFoundation
 
 struct ContentView: View {
     @State private var audioManager = AudioManager()
+    @State private var pingProgress: CGFloat = 1.0
+    @State private var animationTimer: Timer?
     
     func getConnectionColor() -> Color {
         if audioManager.transcriptionClient.connectionStatus.contains("Connecting") {
@@ -35,6 +37,31 @@ struct ContentView: View {
                 Text("Connection:")
                 Text(audioManager.transcriptionClient.connectionStatus)
                     .foregroundColor(getConnectionColor())
+            }
+            
+            // Server statuses with animated dots
+            HStack(spacing: 20) {
+                // Transcription Backend
+                HStack(spacing: 5) {
+                    let backendConnected = audioManager.transcriptionClient.serverStatuses["Backend"] ?? false
+                    Circle()
+                        .fill(backendConnected ? Color.green : Color.red)
+                        .frame(width: 10 * pingProgress, height: 10 * pingProgress)
+                        .animation(.linear(duration: 0.1), value: pingProgress)
+                    Text("Transcription Backend")
+                        .font(.caption)
+                }
+                
+                // Mac Receiver
+                HStack(spacing: 5) {
+                    let receiverConnected = audioManager.transcriptionClient.serverStatuses["Mac Receiver"] ?? false
+                    Circle()
+                        .fill(receiverConnected ? Color.green : Color.red)
+                        .frame(width: 10 * pingProgress, height: 10 * pingProgress)
+                        .animation(.linear(duration: 0.1), value: pingProgress)
+                    Text("Mac Receiver")
+                        .font(.caption)
+                }
             }
             
             Divider()
@@ -80,6 +107,40 @@ struct ContentView: View {
         .padding()
         .task {
             audioManager.checkAndRequestPermission()
+        }
+        .onAppear {
+            Logger.shared.log("ContentView onAppear called")
+            
+            // Only start timer if not already running
+            if animationTimer == nil {
+                Logger.shared.log("Starting animation timer")
+                startAnimationTimer()
+            }
+            
+            // Set up callback to reset animation on status update
+            audioManager.transcriptionClient.onStatusUpdate = {
+                // Reset to full size
+                pingProgress = 1.0
+                Logger.shared.log("Status update received, resetting animation to 1.0")
+            }
+        }
+        .onDisappear {
+            animationTimer?.invalidate()
+            animationTimer = nil
+            Logger.shared.log("ContentView onDisappear - timer invalidated")
+        }
+    }
+    
+    func startAnimationTimer() {
+        // Decrease progress gradually over 5 seconds
+        // 0.05s interval * 100 updates = 5 seconds total
+        // So decrease by 0.01 each update
+        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+            if pingProgress > 0 {
+                withAnimation(.linear(duration: 0.05)) {
+                    pingProgress = max(0, pingProgress - 0.01)
+                }
+            }
         }
     }
 }
