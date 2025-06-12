@@ -31,12 +31,42 @@ const clients = {
   receivers: new Map()      // Mac clients receiving transcriptions (name -> ws)
 };
 
-// Get current server statuses
-function getServerStatuses() {
-  return {
+// Get current server statuses with active health check
+async function getServerStatuses() {
+  const statuses = {
     "Backend": true,  // Backend is always true if we're responding
-    "Mac Receiver": clients.receivers.has("Mac Receiver")
+    "Mac Receiver": false
   };
+  
+  // Check if Mac Receiver is actually responsive
+  const macReceiver = clients.receivers.get("Mac Receiver");
+  if (macReceiver && macReceiver.readyState === 1) { // 1 = OPEN
+    try {
+      // Send ping and wait for pong
+      const pingId = Date.now().toString();
+      const pongPromise = new Promise((resolve) => {
+        const timeout = setTimeout(() => resolve(false), 1000); // 1 second timeout
+        
+        macReceiver.once('message', (data) => {
+          try {
+            const msg = JSON.parse(data.toString());
+            if (msg.type === 'pong' && msg.pingId === pingId) {
+              clearTimeout(timeout);
+              resolve(true);
+            }
+          } catch (e) {}
+        });
+      });
+      
+      macReceiver.send(JSON.stringify({ type: 'ping', pingId }));
+      statuses["Mac Receiver"] = await pongPromise;
+    } catch (error) {
+      console.log('Error pinging Mac Receiver:', error);
+      statuses["Mac Receiver"] = false;
+    }
+  }
+  
+  return statuses;
 }
 
 
@@ -49,14 +79,16 @@ wss.on('connection', (ws) => {
   let previousTranscript = '';  // Track previous transcript for delta calculation
   
   // Send initial connection confirmation with server statuses
-  ws.send(JSON.stringify({ 
-    type: 'connection', 
-    status: 'connected',
-    message: 'Ready to transcribe',
-    serverStatuses: getServerStatuses()
-  }));
+  getServerStatuses().then(statuses => {
+    ws.send(JSON.stringify({ 
+      type: 'connection', 
+      status: 'connected',
+      message: 'Ready to transcribe',
+      serverStatuses: statuses
+    }));
+  });
   
-  ws.on('message', (data) => {
+  ws.on('message', async (data) => {
     try {
       // Check if it's a control message (JSON) or audio data (binary)
       if (Buffer.isBuffer(data) && data.length > 100) {
@@ -95,12 +127,14 @@ wss.on('connection', (ws) => {
           }
           
           // Confirm identification
-          ws.send(JSON.stringify({
-            type: 'connection',
-            status: 'identified',
-            clientType: clientType,
-            serverStatuses: getServerStatuses()
-          }));
+          getServerStatuses().then(statuses => {
+            ws.send(JSON.stringify({
+              type: 'connection',
+              status: 'identified',
+              clientType: clientType,
+              serverStatuses: statuses
+            }));
+          });
           
         } else if (message.type === 'start') {
           // Start new recognition stream
@@ -181,9 +215,10 @@ wss.on('connection', (ws) => {
             
         } else if (message.type === 'requestStatus') {
           // Client is requesting current server statuses
+          const statuses = await getServerStatuses();
           ws.send(JSON.stringify({
             type: 'serverStatusUpdate',
-            serverStatuses: getServerStatuses()
+            serverStatuses: statuses
           }));
           
         } else if (message.type === 'stop') {

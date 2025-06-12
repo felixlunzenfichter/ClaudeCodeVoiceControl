@@ -71,6 +71,14 @@ class TranscriptionReceiver {
         console.error('Backend error:', message.error);
         break;
         
+      case 'ping':
+        // Respond to health check
+        this.ws.send(JSON.stringify({
+          type: 'pong',
+          pingId: message.pingId
+        }));
+        break;
+        
       default:
         console.log('Unknown message type:', message.type);
     }
