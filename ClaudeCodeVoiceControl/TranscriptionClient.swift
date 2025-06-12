@@ -9,6 +9,7 @@ class TranscriptionClient: NSObject {
     
     // Connection state
     var isConnected = false
+    var isRecognizing = false
     var connectionStatus = "Disconnected"
     private var isIntentionalDisconnect = false
     
@@ -52,47 +53,61 @@ class TranscriptionClient: NSObject {
         // Start receiving messages
         receiveMessage()
         
-        // Wait a moment for connection to establish, then send start message
+        // Wait a moment for connection to establish
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             guard let self = self else { return }
-            guard let sampleRate = self.sampleRate else {
-                Logger.shared.log("ERROR: Sample rate not set before connecting. AudioManager must set sample rate first.")
-                self.connectionStatus = "Error: Sample rate not set"
-                self.disconnect()
-                return
-            }
-            let startMessage = [
-                "type": "start",
-                "languageCode": "en-US",
-                "sampleRate": sampleRate
-            ] as [String : Any]
+            self.isConnected = true
+            self.connectionStatus = "Connected"
+            Logger.shared.log("Successfully connected to backend")
             
-            if let data = try? JSONSerialization.data(withJSONObject: startMessage) {
-                self.webSocket?.send(.data(data)) { error in
-                    if let error = error {
-                        self.connectionStatus = "Error: \(error.localizedDescription)"
-                        Logger.shared.log("Connection error: \(error.localizedDescription)")
-                    } else {
-                        self.isConnected = true
-                        self.connectionStatus = "Connected"
-                        Logger.shared.log("Successfully connected to backend")
-                        Logger.shared.log("Sent start message to begin speech recognition")
-                        
-                        // Start periodic status checks
-                        DispatchQueue.main.async {
-                            self.startStatusChecks()
-                        }
-                    }
+            // Start periodic status checks
+            DispatchQueue.main.async {
+                self.startStatusChecks()
+            }
+        }
+    }
+    
+    func startRecognition() {
+        guard isConnected else { return }
+        guard let sampleRate = self.sampleRate else {
+            Logger.shared.log("ERROR: Sample rate not set before starting recognition.")
+            return
+        }
+        
+        let startMessage = [
+            "type": "start",
+            "languageCode": "en-US",
+            "sampleRate": sampleRate
+        ] as [String : Any]
+        
+        if let data = try? JSONSerialization.data(withJSONObject: startMessage) {
+            webSocket?.send(.data(data)) { [weak self] error in
+                if let error = error {
+                    Logger.shared.log("Error starting recognition: \(error.localizedDescription)")
+                } else {
+                    self?.isRecognizing = true
+                    Logger.shared.log("Started recognition stream")
                 }
             }
         }
     }
     
-    func disconnect() {
-        // Send stop message
+    func stopRecognition() {
+        guard isConnected else { return }
+        
         let stopMessage = ["type": "stop"]
         if let data = try? JSONSerialization.data(withJSONObject: stopMessage) {
-            webSocket?.send(.data(data)) { _ in }
+            webSocket?.send(.data(data)) { [weak self] _ in
+                self?.isRecognizing = false
+                Logger.shared.log("Stopped recognition stream")
+            }
+        }
+    }
+    
+    func disconnect() {
+        // Stop recognition first if active
+        if isRecognizing {
+            stopRecognition()
         }
         
         // Stop status checks
@@ -115,8 +130,8 @@ class TranscriptionClient: NSObject {
         // Do an immediate check
         requestServerStatus()
         
-        // Check status every 5 seconds
-        statusCheckTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+        // Check status every 3 seconds
+        statusCheckTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
             Logger.shared.log("Status check timer fired at \(Date())")
             self?.requestServerStatus()
         }

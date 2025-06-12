@@ -6,6 +6,7 @@ class AudioManager: NSObject {
     var permissionStatus = "Checking..."
     var averageLevel: Float = 0.0
     var isRecording = false
+    var autoTranscribeEnabled = false  // Control whether auto-start/stop is active
     
     private var audioEngine: AVAudioEngine!
     private var inputNode: AVAudioInputNode!
@@ -119,28 +120,37 @@ class AudioManager: NSObject {
             }
         }
         
+        // Auto-start/stop only when enabled
+        if autoTranscribeEnabled {
+            // Start recognition when audio detected and connected but not recognizing
+            if average > 0 && transcriptionClient.isConnected && !transcriptionClient.isRecognizing {
+                Logger.shared.log("Audio detected (level: \(average)), starting recognition stream")
+                transcriptionClient.startRecognition()
+            }
+            
+            // Stop recognition when no audio for a while (microphone muted)
+            if average == 0 && transcriptionClient.isConnected && transcriptionClient.isRecognizing {
+                let timeSinceLastAudio = Date().timeIntervalSince(lastAudioTime)
+                if timeSinceLastAudio >= disconnectDelay {
+                    Logger.shared.log("No audio for \(disconnectDelay) seconds, stopping recognition to save costs")
+                    transcriptionClient.stopRecognition()
+                }
+            }
+        }
+        
         // Track audio activity
         if average > 0 {
             lastAudioTime = Date()
         }
         
-        // Auto-disconnect when no audio for a while (microphone muted)
-        if average == 0 && transcriptionClient.isConnected {
-            let timeSinceLastAudio = Date().timeIntervalSince(lastAudioTime)
-            if timeSinceLastAudio >= disconnectDelay {
-                Logger.shared.log("No audio for \(disconnectDelay) seconds, disconnecting to save costs")
-                transcriptionClient.disconnect()
-            }
-        }
-        
-        // Send audio to transcription service
-        if transcriptionClient.isConnected {
+        // Send audio to transcription service only when recognizing
+        if transcriptionClient.isRecognizing {
             // Convert to LINEAR16 format (backend will resample)
             if let audioData = convertToLinear16(buffer) {
                 transcriptionClient.sendAudioData(audioData)
                 // Don't log audio sends - too noisy
             }
-        } else if average > 0 {
+        } else if average > 0 && !transcriptionClient.isConnected {
             Logger.shared.log("Audio level \(average) but not connected yet")
         }
     }

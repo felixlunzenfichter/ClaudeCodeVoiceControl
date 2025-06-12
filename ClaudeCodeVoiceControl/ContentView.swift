@@ -25,29 +25,35 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 10) {
-            // Audio level
-            HStack {
+            // Audio level and transcription status
+            HStack(spacing: 5) {
                 Text("Audio Level:")
                 Text(String(format: "%.6f", audioManager.averageLevel))
-                    .foregroundColor(audioManager.isRecording && audioManager.transcriptionClient.isConnected ? .blue : .red)
+                    .foregroundColor(audioManager.isRecording && audioManager.transcriptionClient.isRecognizing ? .blue : .red)
+                    .frame(minWidth: 80)
+                    .monospaced()
+                
+                Spacer()
+                
+                Text(audioManager.isRecording && audioManager.transcriptionClient.isRecognizing ? "Transcribing" : "Not transcribing")
+                    .foregroundColor(audioManager.isRecording && audioManager.transcriptionClient.isRecognizing ? .green : .red)
             }
-            
-            // Connection status
-            HStack {
-                Text("Connection:")
-                Text(audioManager.transcriptionClient.connectionStatus)
-                    .foregroundColor(getConnectionColor())
-            }
+            .frame(maxWidth: .infinity)
             
             // Server statuses with animated dots
             HStack(spacing: 20) {
                 // Transcription Backend
                 HStack(spacing: 5) {
                     let backendConnected = audioManager.transcriptionClient.serverStatuses["Backend"] ?? false
-                    Circle()
-                        .fill(backendConnected ? Color.green : Color.red)
-                        .frame(width: 10 * pingProgress, height: 10 * pingProgress)
-                        .animation(.linear(duration: 0.1), value: pingProgress)
+                    ZStack {
+                        Circle()
+                            .fill(Color.clear)
+                            .frame(width: 10, height: 10)
+                        Circle()
+                            .fill(backendConnected ? Color.green : Color.red)
+                            .frame(width: 10 * pingProgress, height: 10 * pingProgress)
+                            .animation(.linear(duration: 0.1), value: pingProgress)
+                    }
                     Text("Transcription Backend")
                         .font(.caption)
                 }
@@ -55,10 +61,15 @@ struct ContentView: View {
                 // Mac Receiver
                 HStack(spacing: 5) {
                     let receiverConnected = audioManager.transcriptionClient.serverStatuses["Mac Receiver"] ?? false
-                    Circle()
-                        .fill(receiverConnected ? Color.green : Color.red)
-                        .frame(width: 10 * pingProgress, height: 10 * pingProgress)
-                        .animation(.linear(duration: 0.1), value: pingProgress)
+                    ZStack {
+                        Circle()
+                            .fill(Color.clear)
+                            .frame(width: 10, height: 10)
+                        Circle()
+                            .fill(receiverConnected ? Color.green : Color.red)
+                            .frame(width: 10 * pingProgress, height: 10 * pingProgress)
+                            .animation(.linear(duration: 0.1), value: pingProgress)
+                    }
                     Text("Mac Receiver")
                         .font(.caption)
                 }
@@ -103,6 +114,24 @@ struct ContentView: View {
             }
             
             Spacer()
+            
+            // Auto-transcribe toggle button in bottom right
+            HStack {
+                Spacer()
+                Button(action: {
+                    audioManager.autoTranscribeEnabled.toggle()
+                    // If disabling auto-transcribe, stop any active recognition
+                    if !audioManager.autoTranscribeEnabled && audioManager.transcriptionClient.isRecognizing {
+                        audioManager.transcriptionClient.stopRecognition()
+                    }
+                }) {
+                    Image(systemName: audioManager.autoTranscribeEnabled ? "mic.circle.fill" : "mic.slash.circle.fill")
+                        .font(.system(size: 50))
+                        .foregroundColor(audioManager.autoTranscribeEnabled ? .green : .gray)
+                }
+                .disabled(!audioManager.transcriptionClient.isConnected)
+                .opacity(audioManager.transcriptionClient.isConnected ? 1.0 : 0.5)
+            }
         }
         .padding()
         .task {
@@ -132,12 +161,12 @@ struct ContentView: View {
     }
     
     func startAnimationTimer() {
-        // Decrease progress gradually over 5 seconds
-        // 0.05s interval * 100 updates = 5 seconds total
+        // Decrease progress gradually over 3 seconds
+        // 0.03s interval * 100 updates = 3 seconds total
         // So decrease by 0.01 each update
-        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.03, repeats: true) { _ in
             if pingProgress > 0 {
-                withAnimation(.linear(duration: 0.05)) {
+                withAnimation(.linear(duration: 0.03)) {
                     pingProgress = max(0, pingProgress - 0.01)
                 }
             }
