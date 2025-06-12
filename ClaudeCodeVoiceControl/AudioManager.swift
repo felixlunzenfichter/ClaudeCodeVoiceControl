@@ -58,15 +58,25 @@ class AudioManager: NSObject {
     }
     
     private func startRecording() {
-        // Explicitly use 44.1kHz which works without crashes
-        let recordingFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32,
-                                          sampleRate: 44100,
-                                          channels: 1,
-                                          interleaved: false)!
+        // Use the hardware's native format instead of forcing a specific format
+        let hardwareFormat = inputNode.outputFormat(forBus: 0)
         
-        Logger.shared.log("Recording at: \(recordingFormat.sampleRate) Hz, \(recordingFormat.channelCount) channels")
+        Logger.shared.log("Hardware format: \(hardwareFormat.sampleRate) Hz, \(hardwareFormat.channelCount) channels")
+        Logger.shared.log("Hardware format description: \(hardwareFormat)")
         
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+        // For debugging - check input format too
+        let inputFormat = inputNode.inputFormat(forBus: 0)
+        Logger.shared.log("Input format: \(inputFormat.sampleRate) Hz, \(inputFormat.channelCount) channels")
+        
+        // Store sample rate for backend
+        let hardwareSampleRate = Int(hardwareFormat.sampleRate)
+        if transcriptionClient.sampleRate != hardwareSampleRate {
+            Logger.shared.log("Setting sample rate to \(hardwareSampleRate) Hz")
+            transcriptionClient.sampleRate = hardwareSampleRate
+        }
+        
+        // Install tap with nil format to use the hardware's native format
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: nil) { [weak self] buffer, _ in
             self?.processAudioBuffer(buffer)
         }
         
