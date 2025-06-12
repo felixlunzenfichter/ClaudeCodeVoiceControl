@@ -68,19 +68,19 @@ class TranscriptionClient: NSObject {
             ] as [String : Any]
             
             if let data = try? JSONSerialization.data(withJSONObject: startMessage) {
-                self?.webSocket?.send(.data(data)) { error in
+                self.webSocket?.send(.data(data)) { error in
                     if let error = error {
-                        self?.connectionStatus = "Error: \(error.localizedDescription)"
+                        self.connectionStatus = "Error: \(error.localizedDescription)"
                         Logger.shared.log("Connection error: \(error.localizedDescription)")
                     } else {
-                        self?.isConnected = true
-                        self?.connectionStatus = "Connected"
+                        self.isConnected = true
+                        self.connectionStatus = "Connected"
                         Logger.shared.log("Successfully connected to backend")
                         Logger.shared.log("Sent start message to begin speech recognition")
                         
                         // Start periodic status checks
                         DispatchQueue.main.async {
-                            self?.startStatusChecks()
+                            self.startStatusChecks()
                         }
                     }
                 }
