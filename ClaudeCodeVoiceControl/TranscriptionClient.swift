@@ -29,6 +29,8 @@ class TranscriptionClient: NSObject {
     var transcriptionText = ""      // All finalized text
     var currentUtterance = ""       // Current utterance being spoken
     var interimText = ""           // Current interim text (not yet final)
+    var latestFinalTranscript = ""  // Most recent final transcript
+    var onTranscriptionComplete: ((String) -> Void)?  // Callback when transcription is final
     
     // Backend URL from configuration
     private let backendURL = Configuration.backendURL
@@ -235,11 +237,16 @@ class TranscriptionClient: NSObject {
                     
                     Logger.shared.log("Received transcript - Final: \(isFinal), Text: \(transcript)")
                     if isFinal {
-                        // Final transcript - prepend to our text (newest first)
+                        // Final transcript - store it and notify
                         if !transcript.trimmingCharacters(in: .whitespaces).isEmpty {
-                            self.transcriptionText = transcript + "\n" + self.transcriptionText
+                            self.latestFinalTranscript = transcript
+                            self.transcriptionText = self.transcriptionText + transcript + "\n"
                             print("FINAL TRANSCRIPT: '\(transcript)'")
-                            print("TOTAL TRANSCRIPTION SO FAR: '\(self.transcriptionText)'")
+                            
+                            // Call the completion callback
+                            DispatchQueue.main.async {
+                                self.onTranscriptionComplete?(transcript)
+                            }
                         }
                         self.currentUtterance = ""
                         self.interimText = ""

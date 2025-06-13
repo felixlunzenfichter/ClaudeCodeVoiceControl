@@ -6,7 +6,7 @@ class AudioManager: NSObject {
     var permissionStatus = "Checking..."
     var averageLevel: Float = 0.0
     var isRecording = false
-    var autoTranscribeEnabled = false  // Control whether auto-start/stop is active
+    var autoTranscribeEnabled = true  // Start with auto-transcribe enabled by default
     
     private var audioEngine: AVAudioEngine!
     private var inputNode: AVAudioInputNode!

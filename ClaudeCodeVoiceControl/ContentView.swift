@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var audioManager = AudioManager()
     @State private var pingProgress: CGFloat = 1.0
     @State private var animationTimer: Timer?
+    @State private var transcriptHistory: [String] = []
     
     func getConnectionColor() -> Color {
         if audioManager.transcriptionClient.connectionStatus.contains("Connecting") {
@@ -24,116 +25,152 @@ struct ContentView: View {
     }
     
     var body: some View {
-        VStack(spacing: 10) {
-            // Audio level and transcription status
-            HStack(spacing: 5) {
-                Text("Audio Level:")
-                Text(String(format: "%.6f", audioManager.averageLevel))
-                    .foregroundColor(audioManager.isRecording && audioManager.transcriptionClient.isRecognizing ? .blue : .red)
-                    .frame(minWidth: 80)
-                    .monospaced()
-                
-                Spacer()
-                
-                Text(audioManager.isRecording && audioManager.transcriptionClient.isRecognizing ? "Transcribing" : "Not transcribing")
-                    .foregroundColor(audioManager.isRecording && audioManager.transcriptionClient.isRecognizing ? .green : .red)
-            }
-            .frame(maxWidth: .infinity)
-            
-            // Server statuses with animated dots
-            HStack(spacing: 20) {
-                // Transcription Backend
-                HStack(spacing: 5) {
-                    let backendConnected = audioManager.transcriptionClient.serverStatuses["Backend"] ?? false
-                    ZStack {
-                        Circle()
-                            .fill(Color.clear)
-                            .frame(width: 10, height: 10)
-                        Circle()
-                            .fill(backendConnected ? Color.green : Color.red)
-                            .frame(width: 10 * pingProgress, height: 10 * pingProgress)
-                            .animation(.linear(duration: 0.1), value: pingProgress)
-                    }
-                    Text("Transcription Backend")
-                        .font(.caption)
-                }
-                
-                // Mac Receiver
-                HStack(spacing: 5) {
-                    let receiverConnected = audioManager.transcriptionClient.serverStatuses["Mac Receiver"] ?? false
-                    ZStack {
-                        Circle()
-                            .fill(Color.clear)
-                            .frame(width: 10, height: 10)
-                        Circle()
-                            .fill(receiverConnected ? Color.green : Color.red)
-                            .frame(width: 10 * pingProgress, height: 10 * pingProgress)
-                            .animation(.linear(duration: 0.1), value: pingProgress)
-                    }
-                    Text("Mac Receiver")
-                        .font(.caption)
-                }
-            }
-            
-            Divider()
-            
-            // Transcription section
-            VStack(alignment: .leading, spacing: 5) {
-                Text("Transcription:")
-                    .font(.headline)
-                
+        VStack(spacing: 0) {
+            // Main area - transcript history (terminal view)
+            ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 5) {
-                        // Show current utterance being spoken (interim) at the TOP
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(Array(transcriptHistory.enumerated()), id: \.offset) { index, transcript in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text(">")
+                                    .foregroundColor(.green)
+                                    .font(.system(.body, design: .monospaced))
+                                Text(transcript)
+                                    .font(.system(.body, design: .monospaced))
+                                    .foregroundColor(.primary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .id(index)
+                            .padding(.horizontal)
+                        }
+                    }
+                    .padding(.vertical)
+                }
+                .onChange(of: transcriptHistory.count) { _ in
+                    // Auto-scroll to bottom when new transcript is added
+                    withAnimation {
+                        proxy.scrollTo(transcriptHistory.count - 1, anchor: .bottom)
+                    }
+                }
+            }
+            .background(Color.gray.opacity(0.1))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            
+            // Bottom bar with all controls
+            VStack(spacing: 0) {
+                Divider()
+                
+                HStack(alignment: .top, spacing: 12) {
+                    // Live transcription - Takes all available space
+                    VStack(alignment: .leading, spacing: 4) {
                         if !audioManager.transcriptionClient.currentUtterance.isEmpty {
+                            // Show current utterance being spoken
                             Text(audioManager.transcriptionClient.currentUtterance)
                                 .foregroundColor(.blue)
-                                .italic()
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        
-                        // Show final transcriptions below
-                        if !audioManager.transcriptionClient.transcriptionText.isEmpty {
-                            Text(audioManager.transcriptionClient.transcriptionText)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        
-                        // Show waiting message if both are empty
-                        if audioManager.transcriptionClient.transcriptionText.isEmpty && 
-                           audioManager.transcriptionClient.currentUtterance.isEmpty {
+                                .font(.caption)
+                                .fixedSize(horizontal: false, vertical: true)
+                        } else if !audioManager.transcriptionClient.latestFinalTranscript.isEmpty {
+                            // Show the latest final transcript
+                            Text(audioManager.transcriptionClient.latestFinalTranscript)
+                                .foregroundColor(.primary)
+                                .font(.caption)
+                                .fixedSize(horizontal: false, vertical: true)
+                        } else {
                             Text("Waiting for speech...")
                                 .foregroundColor(.gray)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .italic()
+                                .font(.caption)
                         }
                     }
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                }
-                .frame(maxHeight: 200)
-            }
-            
-            Spacer()
-            
-            // Auto-transcribe toggle button in bottom right
-            HStack {
-                Spacer()
-                Button(action: {
-                    audioManager.autoTranscribeEnabled.toggle()
-                    // If disabling auto-transcribe, stop any active recognition
-                    if !audioManager.autoTranscribeEnabled && audioManager.transcriptionClient.isRecognizing {
-                        audioManager.transcriptionClient.stopRecognition()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    // Status box - Bottom right
+                    VStack(alignment: .leading, spacing: 4) {
+                        // Box 1: Google Transcription and Mac Server
+                        VStack(alignment: .leading, spacing: 4) {
+                            // Backend status with animation
+                            HStack(spacing: 4) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.clear)
+                                        .frame(width: 6, height: 6)
+                                    Circle()
+                                        .fill(audioManager.transcriptionClient.serverStatuses["Backend"] ?? false ? Color.green : Color.red)
+                                        .frame(width: 6 * pingProgress, height: 6 * pingProgress)
+                                        .animation(.linear(duration: 0.1), value: pingProgress)
+                                }
+                                Text("Google Transcription")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            // Mac server status with animation
+                            HStack(spacing: 4) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.clear)
+                                        .frame(width: 6, height: 6)
+                                    Circle()
+                                        .fill(audioManager.transcriptionClient.serverStatuses["Mac Receiver"] ?? false ? Color.green : Color.red)
+                                        .frame(width: 6 * pingProgress, height: 6 * pingProgress)
+                                        .animation(.linear(duration: 0.1), value: pingProgress)
+                                }
+                                Text("Mac Server")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(4)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(4)
+                        
+                        // Box 2: Audio Level and Transcribing status - Clickable
+                        Button(action: {
+                            audioManager.autoTranscribeEnabled.toggle()
+                            if !audioManager.autoTranscribeEnabled && audioManager.transcriptionClient.isRecognizing {
+                                audioManager.transcriptionClient.stopRecognition()
+                            }
+                        }) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                // Audio Level
+                                HStack(spacing: 2) {
+                                    Text("Audio:")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    Text(String(format: "%.6f", audioManager.averageLevel))
+                                        .font(.caption2)
+                                        .foregroundColor(audioManager.transcriptionClient.isRecognizing ? .blue : .red)
+                                        .monospaced()
+                                }
+                                
+                                // Transcribing status
+                                HStack(spacing: 4) {
+                                    Text("•")
+                                        .font(.caption)
+                                        .foregroundColor(audioManager.transcriptionClient.isRecognizing ? .blue : .red)
+                                    Text(audioManager.transcriptionClient.isRecognizing ? "Transcribing" : "Not transcribing")
+                                        .font(.caption2)
+                                        .foregroundColor(audioManager.transcriptionClient.isRecognizing ? .blue : .red)
+                                }
+                            }
+                            .padding(6)
+                            .background(audioManager.autoTranscribeEnabled ? Color.green.opacity(0.15) : Color.gray.opacity(0.15))
+                            .cornerRadius(4)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .disabled(!audioManager.transcriptionClient.isConnected)
+                        .opacity(audioManager.transcriptionClient.isConnected ? 1.0 : 0.5)
                     }
-                }) {
-                    Image(systemName: audioManager.autoTranscribeEnabled ? "mic.circle.fill" : "mic.slash.circle.fill")
-                        .font(.system(size: 50))
-                        .foregroundColor(audioManager.autoTranscribeEnabled ? .green : .gray)
                 }
-                .disabled(!audioManager.transcriptionClient.isConnected)
-                .opacity(audioManager.transcriptionClient.isConnected ? 1.0 : 0.5)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.gray.opacity(0.05))
             }
         }
-        .padding()
         .task {
             audioManager.checkAndRequestPermission()
         }
@@ -151,6 +188,19 @@ struct ContentView: View {
                 // Reset to full size
                 pingProgress = 1.0
                 Logger.shared.log("Status update received, resetting animation to 1.0")
+            }
+            
+            // Set up callback for when transcription is complete
+            audioManager.transcriptionClient.onTranscriptionComplete = { transcript in
+                // Add to terminal history
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                    self.transcriptHistory.append(transcript)
+                }
+                
+                // Clear the latest transcript after a delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self.audioManager.transcriptionClient.latestFinalTranscript = ""
+                }
             }
         }
         .onDisappear {
