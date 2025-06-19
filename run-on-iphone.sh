@@ -16,10 +16,20 @@ if [ $? -eq 0 ]; then
     echo "** BUILD SUCCEEDED **"
     echo "Installing and running on iPhone..."
     
+    # Find the most recent build
+    APP_PATH=$(find /Users/felixlunzenfichter/Library/Developer/Xcode/DerivedData -name "ClaudeCodeVoiceControl.app" -path "*/Build/Products/Debug-iphoneos/*" | head -n 1)
+    
+    if [ -z "$APP_PATH" ]; then
+        echo "Could not find built app"
+        exit 1
+    fi
+    
+    echo "Installing app from: $APP_PATH"
+    
     # Install the app on the device
     xcrun devicectl device install app \
       --device 00008101-000359212650001E \
-      /Users/felixlunzenfichter/Library/Developer/Xcode/DerivedData/ClaudeCodeVoiceControl-*/Build/Products/Debug-iphoneos/ClaudeCodeVoiceControl.app
+      "$APP_PATH"
     
     if [ $? -eq 0 ]; then
         echo "App installed: iVoices.ch.ClaudeCodeVoiceControl"
