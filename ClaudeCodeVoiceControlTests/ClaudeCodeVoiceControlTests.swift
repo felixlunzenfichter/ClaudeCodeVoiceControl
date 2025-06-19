@@ -1,10 +1,3 @@
-//
-//  ClaudeCodeVoiceControlTests.swift
-//  ClaudeCodeVoiceControlTests
-//
-//  Created by Felix Lunzenfichter on 6/11/25.
-//
-
 import Testing
 import AVFoundation
 
@@ -16,7 +9,6 @@ struct ClaudeCodeVoiceControlTests {
         switch permissionStatus {
         case .granted:
             print("✅ Microphone permission: GRANTED")
-            // Test succeeds if permission is granted
         case .denied:
             print("❌ Microphone permission: DENIED")
             throw TestError.microphonePermissionDenied

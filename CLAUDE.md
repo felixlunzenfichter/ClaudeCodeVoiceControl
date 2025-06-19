@@ -24,30 +24,42 @@ This project follows strict Test-Driven Development principles:
    - Remove duplication and improve readability
 
 ### TDD Workflow for Voice Development
+
+Claude should ALWAYS explicitly state which TDD phase we are in:
+
+#### 🔴 RED Phase - Test Writing
 - User describes desired functionality through voice
 - Claude writes the failing test first
 - Run test to verify it fails appropriately
+- State: "We are in the RED phase - writing a failing test"
+
+#### 🟢 GREEN Phase - Implementation
 - Write minimal implementation to pass the test
+- Only write enough code to make the test pass
+- No extra features or functionality
 - Run test to verify it passes
-- Refactor if needed while keeping tests green
-- Commit each complete TDD cycle
+- State: "We are in the GREEN phase - making the test pass"
+
+#### 🔵 REFACTOR Phase - Cleanup
+- Remove ALL comments from production code
+- Remove any unused methods or code
+- Keep only what is tested and necessary
+- Tests must continue to pass
+- State: "We are in the REFACTOR phase - cleaning up the code"
 
 ### Testing Infrastructure
 
-#### Fast Unit Tests (Recommended)
+#### Fast Unit Tests (Default)
 ```bash
-xcodebuild test -project ClaudeCodeVoiceControl.xcodeproj -scheme ClaudeCodeVoiceControl -destination 'id=00008101-000359212650001E' -only-testing:ClaudeCodeVoiceControlTests
+xcodebuild test -project ClaudeCodeVoiceControl.xcodeproj -scheme ClaudeCodeVoiceControl -destination 'id=00008101-000359212650001E' -only-testing:ClaudeCodeVoiceControlTests/ClaudeCodeVoiceControlTests
 ```
-- Runs unit tests only (milliseconds)
-- Skips slow UI tests
-- Perfect for TDD red-green-refactor cycles
+- Use for most TDD cycles
 
-#### All Tests (Slow)
+#### Slow Integration Tests
 ```bash
-xcodebuild test -project ClaudeCodeVoiceControl.xcodeproj -scheme ClaudeCodeVoiceControl -destination 'id=00008101-000359212650001E'
+xcodebuild test -project ClaudeCodeVoiceControl.xcodeproj -scheme ClaudeCodeVoiceControl -destination 'id=00008101-000359212650001E' -only-testing:ClaudeCodeVoiceControlTests/SlowIntegrationTests
 ```
-- Includes UI tests (takes ~30+ seconds)
-- Use only when needed for full validation
+- Use when validating integration features
 
 - **iPhone Device**: 00008101-000359212650001E
 - **Run Script**: `./run-on-iphone.sh` for app deployment
