@@ -23,31 +23,71 @@ This project follows strict Test-Driven Development principles:
    - All tests must continue to pass
    - Remove duplication and improve readability
 
+### CRITICAL TDD RULE: Never Modify Tests
+**NEVER EVER change the test definition once written with the user**
+- The test is the specification - it's sacred
+- Tests are written together with the user and define the desired behavior
+- Once a test is written, only change the implementation code to make it pass
+- The user cares deeply about the test definitions, not the implementation
+- If a test seems wrong, discuss with the user before changing it
+
 ### TDD Workflow for Voice Development
+
+Claude should ALWAYS explicitly state which TDD phase we are in:
+
+#### 🔴 RED Phase - Test Writing
 - User describes desired functionality through voice
 - Claude writes the failing test first
 - Run test to verify it fails appropriately
+- State: "We are in the RED phase - writing a failing test"
+
+#### 🟢 GREEN Phase - Implementation
 - Write minimal implementation to pass the test
+- Only write enough code to make the test pass
+- No extra features or functionality
 - Run test to verify it passes
-- Refactor if needed while keeping tests green
-- Commit each complete TDD cycle
+- State: "We are in the GREEN phase - making the test pass"
+
+#### 🔵 REFACTOR Phase - Cleanup
+- Remove ALL comments from production code
+- Remove any unused methods or code
+- Keep only what is tested and necessary
+- Tests must continue to pass
+- State: "We are in the REFACTOR phase - cleaning up the code"
+
+### Code Style Rules for Each Phase
+
+#### During RED/GREEN phases:
+- Comments are allowed temporarily for clarity
+- Focus on making tests pass
+
+#### During REFACTOR phase:
+- NO COMMENTS anywhere (including tests)
+- Code must speak for itself
+- Remove all file header comments
+- Remove all inline comments  
+- Remove all documentation comments
+- Remove ALL // comments from entire codebase
+
+### Commit Strategy
+- Commit after each complete RED-GREEN-REFACTOR cycle
+- Never commit during RED phase (failing tests)
+- Can commit after GREEN phase if needed
+- Always commit after REFACTOR phase
 
 ### Testing Infrastructure
 
-#### Fast Unit Tests (Recommended)
+#### Fast Unit Tests (Default)
 ```bash
-xcodebuild test -project ClaudeCodeVoiceControl.xcodeproj -scheme ClaudeCodeVoiceControl -destination 'id=00008101-000359212650001E' -only-testing:ClaudeCodeVoiceControlTests
+xcodebuild test -project ClaudeCodeVoiceControl.xcodeproj -scheme ClaudeCodeVoiceControl -destination 'id=00008101-000359212650001E' -only-testing:ClaudeCodeVoiceControlTests/ClaudeCodeVoiceControlTests
 ```
-- Runs unit tests only (milliseconds)
-- Skips slow UI tests
-- Perfect for TDD red-green-refactor cycles
+- Use for most TDD cycles
 
-#### All Tests (Slow)
+#### Slow Integration Tests
 ```bash
-xcodebuild test -project ClaudeCodeVoiceControl.xcodeproj -scheme ClaudeCodeVoiceControl -destination 'id=00008101-000359212650001E'
+xcodebuild test -project ClaudeCodeVoiceControl.xcodeproj -scheme ClaudeCodeVoiceControl -destination 'id=00008101-000359212650001E' -only-testing:ClaudeCodeVoiceControlTests/SlowIntegrationTests
 ```
-- Includes UI tests (takes ~30+ seconds)
-- Use only when needed for full validation
+- Use when validating integration features
 
 - **iPhone Device**: 00008101-000359212650001E
 - **Run Script**: `./run-on-iphone.sh` for app deployment

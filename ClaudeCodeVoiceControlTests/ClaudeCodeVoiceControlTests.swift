@@ -1,12 +1,6 @@
-//
-//  ClaudeCodeVoiceControlTests.swift
-//  ClaudeCodeVoiceControlTests
-//
-//  Created by Felix Lunzenfichter on 6/11/25.
-//
-
 import Testing
 import AVFoundation
+@testable import ClaudeCodeVoiceControl
 
 struct ClaudeCodeVoiceControlTests {
 
@@ -16,7 +10,6 @@ struct ClaudeCodeVoiceControlTests {
         switch permissionStatus {
         case .granted:
             print("✅ Microphone permission: GRANTED")
-            // Test succeeds if permission is granted
         case .denied:
             print("❌ Microphone permission: DENIED")
             throw TestError.microphonePermissionDenied
@@ -28,7 +21,6 @@ struct ClaudeCodeVoiceControlTests {
             throw TestError.microphonePermissionUnknown
         }
     }
-
 }
 
 enum TestError: Error {

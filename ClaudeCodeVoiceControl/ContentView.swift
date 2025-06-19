@@ -1,21 +1,11 @@
-//
-//  ContentView.swift
-//  ClaudeCodeVoiceControl
-//
-//  Created by Felix Lunzenfichter on 6/11/25.
-//
-
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
         VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+            Text("ClaudeCodeVoiceControl")
+                .padding()
         }
-        .padding()
     }
 }
 

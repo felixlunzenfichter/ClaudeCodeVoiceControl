@@ -6,8 +6,20 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		73C9DBA72E02E2F7004AFCB3 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 73C9DBA62E02E2F7004AFCB3 /* WhisperKit */; };
+		73C9DBA92E02E2F7004AFCB3 /* whisperkit-cli in Frameworks */ = {isa = PBXBuildFile; productRef = 73C9DBA82E02E2F7004AFCB3 /* whisperkit-cli */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		73D7F1F22DFA06A00034548E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 73D7F1DB2DFA069F0034548E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 73D7F1E22DFA069F0034548E;
+			remoteInfo = ClaudeCodeVoiceControl;
+		};
+		73D7F2202DFA06B00034548E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 73D7F1DB2DFA069F0034548E /* Project object */;
 			proxyType = 1;
@@ -19,6 +31,7 @@
 /* Begin PBXFileReference section */
 		73D7F1E32DFA069F0034548E /* ClaudeCodeVoiceControl.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClaudeCodeVoiceControl.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		73D7F1F12DFA06A00034548E /* ClaudeCodeVoiceControlTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClaudeCodeVoiceControlTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		73D7F21F2DFA06B00034548E /* ClaudeCodeVoiceControlIntegrationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClaudeCodeVoiceControlIntegrationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -32,6 +45,11 @@
 			path = ClaudeCodeVoiceControlTests;
 			sourceTree = "<group>";
 		};
+		73D7F2222DFA06B00034548E /* ClaudeCodeVoiceControlIntegrationTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ClaudeCodeVoiceControlIntegrationTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,10 +57,19 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				73C9DBA72E02E2F7004AFCB3 /* WhisperKit in Frameworks */,
+				73C9DBA92E02E2F7004AFCB3 /* whisperkit-cli in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		73D7F1EE2DFA06A00034548E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		73D7F21C2DFA06B00034548E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -57,6 +84,7 @@
 			children = (
 				73D7F1E52DFA069F0034548E /* ClaudeCodeVoiceControl */,
 				73D7F1F42DFA06A00034548E /* ClaudeCodeVoiceControlTests */,
+				73D7F2222DFA06B00034548E /* ClaudeCodeVoiceControlIntegrationTests */,
 				73D7F1E42DFA069F0034548E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -66,6 +94,7 @@
 			children = (
 				73D7F1E32DFA069F0034548E /* ClaudeCodeVoiceControl.app */,
 				73D7F1F12DFA06A00034548E /* ClaudeCodeVoiceControlTests.xctest */,
+				73D7F21F2DFA06B00034548E /* ClaudeCodeVoiceControlIntegrationTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -90,6 +119,8 @@
 			);
 			name = ClaudeCodeVoiceControl;
 			packageProductDependencies = (
+				73C9DBA62E02E2F7004AFCB3 /* WhisperKit */,
+				73C9DBA82E02E2F7004AFCB3 /* whisperkit-cli */,
 			);
 			productName = ClaudeCodeVoiceControl;
 			productReference = 73D7F1E32DFA069F0034548E /* ClaudeCodeVoiceControl.app */;
@@ -118,6 +149,29 @@
 			productReference = 73D7F1F12DFA06A00034548E /* ClaudeCodeVoiceControlTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		73D7F21E2DFA06B00034548E /* ClaudeCodeVoiceControlIntegrationTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 73C9DBA22E02DDC1004AFCB3 /* Build configuration list */;
+			buildPhases = (
+				73D7F21B2DFA06B00034548E /* Sources */,
+				73D7F21C2DFA06B00034548E /* Frameworks */,
+				73D7F21D2DFA06B00034548E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				73D7F2212DFA06B00034548E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				73D7F2222DFA06B00034548E /* ClaudeCodeVoiceControlIntegrationTests */,
+			);
+			name = ClaudeCodeVoiceControlIntegrationTests;
+			packageProductDependencies = (
+			);
+			productName = ClaudeCodeVoiceControlIntegrationTests;
+			productReference = 73D7F21F2DFA06B00034548E /* ClaudeCodeVoiceControlIntegrationTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -135,7 +189,7 @@
 						CreatedOnToolsVersion = 16.4;
 						TestTargetID = 73D7F1E22DFA069F0034548E;
 					};
-					73D7F1FA2DFA06A00034548E = {
+					73D7F21E2DFA06B00034548E = {
 						CreatedOnToolsVersion = 16.4;
 						TestTargetID = 73D7F1E22DFA069F0034548E;
 					};
@@ -150,6 +204,9 @@
 			);
 			mainGroup = 73D7F1DA2DFA069F0034548E;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				73C9DBA52E02E2F7004AFCB3 /* XCRemoteSwiftPackageReference "WhisperKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 73D7F1E42DFA069F0034548E /* Products */;
 			projectDirPath = "";
@@ -157,6 +214,7 @@
 			targets = (
 				73D7F1E22DFA069F0034548E /* ClaudeCodeVoiceControl */,
 				73D7F1F02DFA06A00034548E /* ClaudeCodeVoiceControlTests */,
+				73D7F21E2DFA06B00034548E /* ClaudeCodeVoiceControlIntegrationTests */,
 			);
 		};
 /* End PBXProject section */
@@ -176,7 +234,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		73D7F1F92DFA06A00034548E /* Resources */ = {
+		73D7F21D2DFA06B00034548E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -200,7 +258,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		73D7F1F72DFA06A00034548E /* Sources */ = {
+		73D7F21B2DFA06B00034548E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -215,14 +273,33 @@
 			target = 73D7F1E22DFA069F0034548E /* ClaudeCodeVoiceControl */;
 			targetProxy = 73D7F1F22DFA06A00034548E /* PBXContainerItemProxy */;
 		};
-		73D7F1FD2DFA06A00034548E /* PBXTargetDependency */ = {
+		73D7F2212DFA06B00034548E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 73D7F1E22DFA069F0034548E /* ClaudeCodeVoiceControl */;
-			targetProxy = 73D7F1FC2DFA06A00034548E /* PBXContainerItemProxy */;
+			targetProxy = 73D7F2202DFA06B00034548E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		73C9DBA02E02DC49004AFCB3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = ClaudeCodeVoiceControlIntegrationTests;
+			};
+			name = Debug;
+		};
+		73C9DBA12E02DC49004AFCB3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				PRODUCT_NAME = ClaudeCodeVoiceControlIntegrationTests;
+			};
+			name = Release;
+		};
 		73D7F2032DFA06A00034548E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -463,53 +540,18 @@
 			};
 			name = Release;
 		};
-		73D7F20C2DFA06A00034548E /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = W26GVS4M5S;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MACOSX_DEPLOYMENT_TARGET = 15.4;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = iVoices.ch.ClaudeCodeVoiceControlUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = ClaudeCodeVoiceControl;
-				XROS_DEPLOYMENT_TARGET = 2.5;
-			};
-			name = Debug;
-		};
-		73D7F20D2DFA06A00034548E /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = W26GVS4M5S;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MACOSX_DEPLOYMENT_TARGET = 15.4;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = iVoices.ch.ClaudeCodeVoiceControlUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = ClaudeCodeVoiceControl;
-				XROS_DEPLOYMENT_TARGET = 2.5;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		73C9DBA22E02DDC1004AFCB3 /* Build configuration list */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				73C9DBA02E02DC49004AFCB3 /* Debug */,
+				73C9DBA12E02DC49004AFCB3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		73D7F1DE2DFA069F0034548E /* Build configuration list for PBXProject "ClaudeCodeVoiceControl" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -537,16 +579,31 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		73D7F20B2DFA06A00034548E /* Build configuration list for PBXNativeTarget "ClaudeCodeVoiceControlUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				73D7F20C2DFA06A00034548E /* Debug */,
-				73D7F20D2DFA06A00034548E /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		73C9DBA52E02E2F7004AFCB3 /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/argmaxinc/WhisperKit";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		73C9DBA62E02E2F7004AFCB3 /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 73C9DBA52E02E2F7004AFCB3 /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = WhisperKit;
+		};
+		73C9DBA82E02E2F7004AFCB3 /* whisperkit-cli */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 73C9DBA52E02E2F7004AFCB3 /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = "whisperkit-cli";
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 73D7F1DB2DFA069F0034548E /* Project object */;
 }
