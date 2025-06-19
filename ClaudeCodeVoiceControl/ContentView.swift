@@ -9,6 +9,11 @@ struct ContentView: View {
                 .font(.largeTitle)
                 .padding()
             
+            Text(viewModel.status)
+                .font(.headline)
+                .foregroundColor(viewModel.isProcessing ? .orange : .gray)
+                .padding(.bottom)
+            
             Button(action: {
                 viewModel.toggleRecording()
             }) {
@@ -20,6 +25,7 @@ struct ContentView: View {
                     .cornerRadius(10)
             }
             .padding()
+            .disabled(viewModel.status == "Initializing WhisperKit...")
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {

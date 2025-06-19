@@ -16,8 +16,8 @@ if [ $? -eq 0 ]; then
     echo "** BUILD SUCCEEDED **"
     echo "Installing and running on iPhone..."
     
-    # Find the most recent build
-    APP_PATH=$(find /Users/felixlunzenfichter/Library/Developer/Xcode/DerivedData -name "ClaudeCodeVoiceControl.app" -path "*/Build/Products/Debug-iphoneos/*" | head -n 1)
+    # Find the most recent build, excluding Index.noindex paths
+    APP_PATH=$(find /Users/felixlunzenfichter/Library/Developer/Xcode/DerivedData -name "ClaudeCodeVoiceControl.app" -path "*/Build/Products/Debug-iphoneos/*" | grep -v "Index.noindex" | head -n 1)
     
     if [ -z "$APP_PATH" ]; then
         echo "Could not find built app"

@@ -13,8 +13,9 @@ class AudioManager: NSObject, ObservableObject {
     private var audioBuffer = Data()
     private var chunkTimer: Timer?
     
-    private let sampleRate: Double = 48000
+    private let sampleRate: Double = 16000
     private let channels: UInt32 = 1
+    private let chunkDuration: TimeInterval = 2.0
     
     override init() {
         super.init()
@@ -24,15 +25,28 @@ class AudioManager: NSObject, ObservableObject {
     private func setupAudioSession() {
         let session = AVAudioSession.sharedInstance()
         do {
-            try session.setCategory(.record, mode: .default)
+            try session.setCategory(.record, mode: .measurement)
+            try session.setPreferredSampleRate(sampleRate)
             try session.setActive(true)
+            print("✅ Audio session configured: \(session.sampleRate) Hz")
         } catch {
-            print("Failed to set up audio session: \(error)")
+            print("❌ Failed to set up audio session: \(error)")
         }
     }
     
     func startRecording() {
         guard !isRecording else { return }
+        
+        AVAudioSession.sharedInstance().requestRecordPermission { [weak self] granted in
+            if granted {
+                self?.startRecordingInternal()
+            } else {
+                print("❌ Microphone permission denied")
+            }
+        }
+    }
+    
+    private func startRecordingInternal() {
         
         audioEngine = AVAudioEngine()
         guard let audioEngine = audioEngine else { return }
@@ -58,8 +72,9 @@ class AudioManager: NSObject, ObservableObject {
             try audioEngine.start()
             isRecording = true
             startChunkTimer()
+            print("🎙️ Audio engine started - Format: \(recordingFormat)")
         } catch {
-            print("Failed to start audio engine: \(error)")
+            print("❌ Failed to start audio engine: \(error)")
         }
     }
     
@@ -78,7 +93,7 @@ class AudioManager: NSObject, ObservableObject {
     }
     
     private func startChunkTimer() {
-        chunkTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        chunkTimer = Timer.scheduledTimer(withTimeInterval: chunkDuration, repeats: true) { [weak self] _ in
             self?.deliverChunk()
         }
     }
@@ -101,11 +116,15 @@ class AudioManager: NSObject, ObservableObject {
     }
     
     private func deliverChunk() {
-        guard !audioBuffer.isEmpty else { return }
+        guard !audioBuffer.isEmpty else { 
+            print("⚠️ No audio data in buffer")
+            return 
+        }
         
         let chunk = audioBuffer
         audioBuffer = Data()
         
+        print("📦 Delivering audio chunk: \(chunk.count) bytes (~\(Double(chunk.count) / (sampleRate * 2)) seconds)")
         onAudioChunk?(chunk)
     }
 }

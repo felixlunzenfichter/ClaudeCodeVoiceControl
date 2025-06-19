@@ -26,20 +26,24 @@ class TranscriptionService {
     }
     
     func transcribe(_ audioData: Data) async throws -> String {
+        print("🎯 Transcribe called with \(audioData.count) bytes")
+        
         var attempts = 0
-        while whisperKit == nil && attempts < 10 {
+        while whisperKit == nil && attempts < 30 {
+            print("⏳ Waiting for WhisperKit... (attempt \(attempts + 1))")
             try await Task.sleep(for: .seconds(1))
             attempts += 1
         }
         
         guard let whisperKit = whisperKit else {
+            print("❌ WhisperKit not ready after \(attempts) attempts")
             throw TranscriptionError.whisperKitNotReady
         }
         
         let tempURL = createTempWAVFile(from: audioData)
         defer { try? FileManager.default.removeItem(at: tempURL) }
         
-        print("🔊 Transcribing audio file: \(tempURL.path)")
+        print("🔊 Transcribing audio file: \(tempURL.path) (\(audioData.count) bytes)")
         
         let results = try await whisperKit.transcribe(audioPath: tempURL.path)
         let transcriptionText = results.first?.text ?? ""
@@ -54,8 +58,8 @@ class TranscriptionService {
         
         var wavData = Data()
         
-        let sampleRate: UInt32 = 48000
-        let channels: UInt16 = 2
+        let sampleRate: UInt32 = 16000
+        let channels: UInt16 = 1
         let bitsPerSample: UInt16 = 16
         let bytesPerSample = channels * (bitsPerSample / 8)
         let bytesPerSecond = sampleRate * UInt32(bytesPerSample)
